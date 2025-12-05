@@ -273,6 +273,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 export function useAdminAuth() {
   const context = useContext(AdminAuthContext);
   if (context === undefined) {
+    // During static generation/build time, return a safe default
+    // This allows components to be rendered during build without errors
+    if (typeof window === 'undefined') {
+      return {
+        adminUser: null,
+        loading: true,
+        login: async () => ({ success: false, error: 'Not available during build' }),
+        verifyTwoFactor: async () => ({ success: false, error: 'Not available during build' }),
+        startTwoFactorSetup: async () => ({ error: 'Not available during build' }),
+        confirmTwoFactorSetup: async () => ({ success: false, error: 'Not available during build' }),
+        disableTwoFactor: async () => ({ success: false, error: 'Not available during build' }),
+        updateAdminUser: () => {},
+        logout: () => {},
+        isAuthenticated: false,
+      } as AdminAuthContextType;
+    }
     throw new Error('useAdminAuth must be used within an AdminAuthProvider');
   }
   return context;

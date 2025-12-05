@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, BarChart3, Eye, MapPin, RefreshCcw, Search, UserCircle, Users, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';

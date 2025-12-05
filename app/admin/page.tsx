@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useAdminAuth } from '@/contexts/AdminAuthContext';
-import AdminLogin from '@/pages/AdminLogin';
+import type { AdminPage } from '@/adminTypes';
 import AdminLayout from '@/components/admin/AdminLayout';
-import DashboardPage from '@/pages/admin/DashboardPage';
-import ProductsPage from '@/pages/admin/ProductsPage';
-import OrdersPage from '@/pages/admin/OrdersPage';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import CategoriesPage from '@/pages/admin/CategoriesPage';
 import CustomersPage from '@/pages/admin/CustomersPage';
+import DashboardPage from '@/pages/admin/DashboardPage';
+import OrdersPage from '@/pages/admin/OrdersPage';
+import ProductsPage from '@/pages/admin/ProductsPage';
 import SettingsPage from '@/pages/admin/SettingsPage';
-import type { AdminPage } from '@/adminTypes';
+import AdminLogin from '@/pages/AdminLogin';
+import { useState } from 'react';
+
+// Force dynamic rendering to prevent static generation issues
+export const dynamic = 'force-dynamic';
 
 export default function AdminDashboard() {
   const { isAuthenticated, loading } = useAdminAuth();

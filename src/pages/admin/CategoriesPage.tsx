@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Eye, EyeOff, FolderTree, Plus, Search, Trash2, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';

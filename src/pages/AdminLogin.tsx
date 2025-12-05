@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { Lock, Mail, AlertCircle, ShieldCheck } from 'lucide-react';
