@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-neutral-950 dark:text-neutral-100;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  @keyframes disco-gradient {
+    0% {
+      background-position: 0% 50%, 100% 50%, 0% 0%, 100% 100%;
+    }
+    25% {
+      background-position: 50% 0%, 50% 100%, 100% 50%, 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%, 0% 50%, 100% 100%, 0% 0%;
+    }
+    75% {
+      background-position: 50% 100%, 50% 0%, 0% 50%, 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%, 100% 50%, 0% 0%, 100% 100%;
+    }
+  }
+
+  .bg-gradient-disco {
+    background:
+      radial-gradient(ellipse 800px 600px at top right, rgba(255, 223, 186, 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse 800px 600px at bottom left, rgba(186, 230, 253, 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse 800px 600px at top left, rgba(254, 202, 202, 0.28) 0%, transparent 50%),
+      radial-gradient(ellipse 800px 600px at bottom right, rgba(196, 181, 253, 0.28) 0%, transparent 50%),
+      #fafafa;
+    background-size: 200% 200%;
+    background-attachment: fixed;
+    animation: disco-gradient 15s ease infinite;
+  }
+
+  .bg-gradient-disco::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.015) 2px,
+        rgba(0, 0, 0, 0.015) 4px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.015) 2px,
+        rgba(0, 0, 0, 0.015) 4px
+      );
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.5;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+}
