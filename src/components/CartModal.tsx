@@ -108,7 +108,10 @@ export default function CartModal({
           },
           (payload: any) => {
             console.log('Realtime update received:', payload);
-            if (payload.new.status === 'paid') {
+            console.log('New Status:', payload.new?.status);
+
+            if (payload.new?.status === 'paid') {
+              console.log('Payment Confirmed! Closing modal.');
               // Payment confirmed by Server (via Webhook)
               setIsProcessing(false);
               onCheckoutSuccess();
