@@ -97,14 +97,14 @@ export default function CartModal({
 
       // 2. Subscribe to Realtime Updates for this Booking
       const channel = supabase
-        .channel(`order_updates_${orderDataDb.id} `)
+        .channel(`order_updates_${orderDataDb.id}`)
         .on(
           'postgres_changes',
           {
             event: 'UPDATE',
             schema: 'public',
             table: 'orders',
-            filter: `id = eq.${orderDataDb.id} `,
+            filter: `id=eq.${orderDataDb.id}`,
           },
           (payload: any) => {
             console.log('Realtime update received:', payload);
