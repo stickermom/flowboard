@@ -67,8 +67,7 @@ export async function POST(req: Request) {
           const { error } = await supabaseAdmin
             .from('orders')
             .update({
-              status: 'paid',
-              payment_id: payment.id
+              status: 'paid'
             })
             .eq('id', flowboardOrderId); // Assuming UUID or ID
             
