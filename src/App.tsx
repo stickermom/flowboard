@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, Heart, User } from 'lucide-react';
-import ProductCard from './components/ProductCard';
-import ProductModal from './components/ProductModal';
+import { Heart, Search, ShoppingBag, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import AuthModal from './components/AuthModal';
 import CartModal from './components/CartModal';
 import FavoritesModal from './components/FavoritesModal';
+import ProductCard from './components/ProductCard';
+import ProductModal from './components/ProductModal';
 import ProfileModal from './components/ProfileModal';
-import AuthModal from './components/AuthModal';
-import { Product, CartItem } from './types';
-import { productService, cartService, favoritesService } from './services/supabaseService';
 import { useAuth } from './contexts/AuthContext';
+import { cartService, favoritesService, productService } from './services/supabaseService';
 import { migrateGuestDataToUser } from './services/userMigrationService';
+import { CartItem, Product } from './types';
 
 function App() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -25,7 +25,7 @@ function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Get userId: authenticated user ID or guest ID
   const [userId, setUserId] = useState(() => {
     const stored = localStorage.getItem('userId');
@@ -91,7 +91,7 @@ function App() {
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || selectedCategory === 'Favorites' || product.category === selectedCategory;
     const matchesFavorites = selectedCategory !== 'Favorites' || isFavorite(product.id);
     return matchesSearch && matchesCategory && matchesFavorites;
@@ -131,17 +131,23 @@ function App() {
   useEffect(() => {
     const loadInitialData = async () => {
       if (authLoading) return;
-      
+
       setLoading(true);
-      const [productsData, cartData, favoritesData] = await Promise.all([
-        productService.getAllProducts(),
-        cartService.getCartItems(userId),
-        favoritesService.getFavorites(userId),
-      ]);
-      setProducts(productsData);
-      setCartItems(cartData);
-      setFavorites(favoritesData);
-      setLoading(false);
+
+      // Load products first (Priority)
+      productService.getAllProducts().then(productsData => {
+        setProducts(productsData);
+        setLoading(false); // Show content as soon as products are ready
+      });
+
+      // Load user-specific data in background (Non-blocking)
+      cartService.getCartItems(userId).then(cartData => {
+        setCartItems(cartData);
+      });
+
+      favoritesService.getFavorites(userId).then(favoritesData => {
+        setFavorites(favoritesData);
+      });
     };
 
     if (userId) {
@@ -187,33 +193,29 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-disco">
-      <header className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 flex justify-center ${
-        headerVisible ? 'translate-y-0' : '-translate-y-full'
-      }`}>
+      <header className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 flex justify-center ${headerVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}>
         <div className="bg-white/60 backdrop-blur-xl border border-white/20 rounded-b-2xl shadow-sm px-6 py-3 pb-4 max-w-xl">
           <div
-            className={`flex items-center justify-center mb-3 transition-all duration-200 ${
-              showContent ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
-            }`}
+            className={`flex items-center justify-center mb-3 transition-all duration-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
+              }`}
           >
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide group max-w-fit">
               <button
                 onClick={() => setSelectedCategory('All')}
-                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === 'All'
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === 'All'
                     ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
                     : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 All
               </button>
               <button
                 onClick={() => setSelectedCategory('Favorites')}
-                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
-                  selectedCategory === 'Favorites'
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${selectedCategory === 'Favorites'
                     ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
                     : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <Heart size={12} />
                 Favorites
@@ -222,11 +224,10 @@ function App() {
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                    selectedCategory === category
+                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === category
                       ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
                       : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   {category}
                 </button>
@@ -235,9 +236,8 @@ function App() {
           </div>
 
           <div
-            className={`flex items-center gap-2 transition-all duration-200 ${
-              showSearchBar ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
-            }`}
+            className={`flex items-center gap-2 transition-all duration-200 ${showSearchBar ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+              }`}
           >
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
@@ -279,9 +279,8 @@ function App() {
       <main className="max-w-4xl mx-auto px-8 py-8 pt-40 md:px-8 px-4">
         {showLoader && (
           <div
-            className={`text-center py-16 space-y-3 transition-opacity duration-200 ${
-              loading ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`text-center py-16 space-y-3 transition-opacity duration-200 ${loading ? 'opacity-100' : 'opacity-0'
+              }`}
           >
             <p className="text-sm font-medium uppercase tracking-wide text-gray-400">
               Getting the storefront ready
@@ -295,9 +294,8 @@ function App() {
         {!loading && (
           <>
             <div
-              className={`columns-3 md:columns-4 gap-3 transition-all duration-200 ${
-                showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
-              }`}
+              className={`columns-3 md:columns-4 gap-3 transition-all duration-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+                }`}
             >
               {filteredProducts.map(product => (
                 <ProductCard
@@ -314,9 +312,8 @@ function App() {
 
             {filteredProducts.length === 0 && (
               <div
-                className={`text-center py-16 transition-opacity duration-200 ${
-                  showContent ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`text-center py-16 transition-opacity duration-200 ${showContent ? 'opacity-100' : 'opacity-0'
+                  }`}
               >
                 <p className="text-slate-500">No products found</p>
               </div>
