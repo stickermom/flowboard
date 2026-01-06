@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Product, CartItem } from '../types';
+import { CartItem, Product } from '../types';
 
 export interface DbProduct {
   id: string;
@@ -264,6 +264,10 @@ export const cartService = {
   async removeItem(userId: string, productId: string): Promise<void> {
     if (!userId || userId.trim() === '') {
       throw new Error('User ID is required to remove items from cart');
+    }
+    if (!productId || productId.trim() === '') {
+      console.error('Attempted to remove item with empty productId');
+      return;
     }
 
     const { error } = await supabase

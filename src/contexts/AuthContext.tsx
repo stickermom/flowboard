@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface UserProfile {
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      
+
       if (currentUser) {
         await fetchUserProfile(currentUser.id);
       } else {
@@ -97,11 +97,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        // Only log real errors, ignore "Row not found" (PGRST116) as it just means no profile yet
+        if (error.code !== 'PGRST116') {
+          console.error('Error fetching user profile:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+        }
         setProfile(null);
       } else {
         const profileData = data as UserProfile;
-        
+
         // If avatar_url is missing but we have user metadata, try to get it from there
         if (!profileData.avatar_url && user) {
           const avatarFromMetadata = user.user_metadata?.avatar_url || user.user_metadata?.picture;
@@ -114,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             profileData.avatar_url = avatarFromMetadata;
           }
         }
-        
+
         setProfile(profileData);
       }
     } catch (err) {

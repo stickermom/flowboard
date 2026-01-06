@@ -1,8 +1,10 @@
+
+import { Minus, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
-import { X, Plus, Minus, Trash2 } from 'lucide-react';
-import { CartItem } from '../types';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { formatINR } from '../lib/currency';
+import { supabase } from '../lib/supabase';
+import { CartItem } from '../types';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -12,6 +14,12 @@ interface CartModalProps {
   onRemoveItem: (productId: string) => void;
   userId: string;
   onCheckoutSuccess: () => void;
+}
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
 }
 
 export default function CartModal({
@@ -24,6 +32,7 @@ export default function CartModal({
   onCheckoutSuccess,
 }: CartModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const { isAuthenticated, signInWithGoogle } = useAuth();
 
   if (!isOpen) return null;
 
@@ -32,25 +41,141 @@ export default function CartModal({
     0
   );
 
-  const handleCheckout = async () => {
-    setIsProcessing(true);
-    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => {
+        resolve(true);
+      };
+      script.onerror = () => {
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+  };
 
-    const { error } = await supabase
-      .from('orders')
-      .insert({
-        user_id: userId,
-        order_number: orderNumber,
-        items: cartItems,
-        total: total,
-        status: 'completed',
+  const handleCheckout = async () => {
+    if (!isAuthenticated) {
+      alert('Please login to proceed with payment');
+      // Optional: Trigger login flow here if desired, e.g. open login modal or redirect
+      // For now, just alerting as requested.
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const res = await loadRazorpayScript();
+
+      if (!res) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        setIsProcessing(false);
+        return;
+      }
+
+      // 1. Create Pending Order in Supabase
+      const orderNumber = `ORD - ${Date.now()} -${Math.random().toString(36).substr(2, 6).toUpperCase()} `;
+
+      const { data: orderDataDb, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: userId,
+          order_number: orderNumber,
+          items: cartItems,
+          total: total,
+          status: 'pending', // Initial status
+        })
+        .select()
+        .single();
+
+      if (orderError || !orderDataDb) {
+        throw new Error('Failed to create pending order');
+      }
+
+      console.log('Pending order created:', orderDataDb.id);
+
+      // 2. Subscribe to Realtime Updates for this Booking
+      const channel = supabase
+        .channel(`order_updates_${orderDataDb.id} `)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `id = eq.${orderDataDb.id} `,
+          },
+          (payload: any) => {
+            console.log('Realtime update received:', payload);
+            if (payload.new.status === 'paid') {
+              // Payment confirmed by Server (via Webhook)
+              setIsProcessing(false);
+              onCheckoutSuccess();
+              onClose();
+              supabase.removeChannel(channel);
+            }
+          }
+        )
+        .subscribe();
+
+      // 3. Create Order on Razorpay Backend (passing internal order ID)
+      const orderRes = await fetch('/api/razorpay/order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: total,
+          currency: 'INR',
+          notes: {
+            flowboard_order_id: orderDataDb.id, // Critical for Webhook matching
+          },
+        }),
       });
 
-    setIsProcessing(false);
+      if (!orderRes.ok) {
+        throw new Error('Failed to create Razorpay order');
+      }
 
-    if (!error) {
-      onCheckoutSuccess();
-      onClose();
+      const razorpayOrderData = await orderRes.json();
+
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: razorpayOrderData.amount,
+        currency: razorpayOrderData.currency,
+        name: "Flowboard Store",
+        description: "Secure Payment",
+        order_id: razorpayOrderData.id,
+        handler: function (response: any) {
+          // In Webhook flow, we DO NOT client-side update only.
+          // We wait for the Realtime subscription to fire.
+          console.log("Payment completed on client, waiting for webhook confirmation...");
+          // Optionally show a "Verifying..." spinner here.
+        },
+        prefill: {
+          name: "Flowboard User",
+          email: "user@example.com",
+          contact: "9999999999"
+        },
+        theme: {
+          color: "#3399cc"
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+            supabase.removeChannel(channel);
+          }
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Checkout failed. Please try again.');
+      setIsProcessing(false);
     }
   };
 
@@ -154,7 +279,7 @@ export default function CartModal({
               disabled={isProcessing}
               className="w-full py-3 px-6 rounded-lg font-medium bg-zinc-100 text-zinc-900 hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? 'Processing...' : 'Checkout'}
+              {isProcessing ? 'Processing...' : 'Pay with Razorpay'}
             </button>
           </div>
         )}
