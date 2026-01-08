@@ -130,8 +130,6 @@ function App() {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      if (authLoading) return;
-
       setLoading(true);
 
       // Load products first (Priority)
@@ -204,8 +202,8 @@ function App() {
               <button
                 onClick={() => setSelectedCategory('All')}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === 'All'
-                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
-                    : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
+                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
+                  : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
                   }`}
               >
                 All
@@ -213,8 +211,8 @@ function App() {
               <button
                 onClick={() => setSelectedCategory('Favorites')}
                 className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${selectedCategory === 'Favorites'
-                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
-                    : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
+                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
+                  : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
                   }`}
               >
                 <Heart size={12} />
@@ -225,8 +223,8 @@ function App() {
                   key={category}
                   onClick={() => setSelectedCategory(category)}
                   className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === category
-                      ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
-                      : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
+                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-800 hover:text-white'
+                    : 'bg-white/20 text-gray-700 hover:bg-white/100 border border-white/30 hover:border-gray-300'
                     }`}
                 >
                   {category}
